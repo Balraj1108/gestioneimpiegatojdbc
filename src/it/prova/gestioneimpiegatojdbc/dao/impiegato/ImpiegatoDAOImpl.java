@@ -1,5 +1,6 @@
 package it.prova.gestioneimpiegatojdbc.dao.impiegato;
 
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -125,7 +126,7 @@ public class ImpiegatoDAOImpl extends AbstractMySQLDAO implements ImpiegatoDAO {
 			ps.setString(3, input.getCodiceFiscale());
 			ps.setDate(4, new java.sql.Date(input.getDataNascita().getTime()));
 			ps.setDate(5, new java.sql.Date(input.getDataAssunzione().getTime()));
-			ps.setLong(6, input.getId());
+			
 			result = ps.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -203,20 +204,113 @@ public class ImpiegatoDAOImpl extends AbstractMySQLDAO implements ImpiegatoDAO {
 
 	@Override
 	public List<Impiegato> findAllByCompagnia(Compagnia compagniaInput) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		if (isNotActive())
+			throw new Exception("Connessione non attiva. Impossibile effettuare operazioni DAO.");
+
+		if (compagniaInput == null)
+			throw new Exception("Valore di input non ammesso.");
+
+		ArrayList<Impiegato> result = new ArrayList<Impiegato>();
+		Impiegato userTemp = null;
+		Compagnia compTemp = null;
+
+		try (PreparedStatement ps = connection.prepareStatement("select * from impiegato i inner join compagnia c on c.id=i.compagnia_id where i.compagnia_id = ? ;")) {
+			// quando si fa il setDate serve un tipo java.sql.Date
+			//ps.setDate(1, new java.sql.Date(dateCreatedInput.getTime()));
+			ps.setLong(1, compagniaInput.getId());
+
+			try (ResultSet rs = ps.executeQuery();) {
+				while (rs.next()) {
+					userTemp = new Impiegato();
+					userTemp.setNome(rs.getString("NOME"));
+					userTemp.setCognome(rs.getString("COGNOME"));
+					userTemp.setCodiceFiscale(rs.getString("codicefiscale"));
+					userTemp.setDataNascita(rs.getDate("datanascita"));
+					userTemp.setDataAssunzione(rs.getDate("dataassunzione"));
+					userTemp.setId(rs.getLong("i.ID"));
+					
+					compTemp = new Compagnia();
+					compTemp.setId(rs.getLong("c.id"));
+					compTemp.setRagioneSociale(rs.getString("ragionesociale"));
+					compTemp.setFatturatoAnnuo(rs.getInt("fatturatoannuo"));
+					compTemp.setDataFondazione(rs.getDate("datafondazione"));
+					userTemp.setCompagnia(compTemp);
+					result.add(userTemp);
+				}
+			} // niente catch qui
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return result;
 	}
 
 	@Override
 	public int countByDataFondazioneCompagniaGreaterThan(Date dateCreatedInput) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		if (isNotActive())
+			throw new Exception("Connessione non attiva. Impossibile effettuare operazioni DAO.");
+
+		if (dateCreatedInput == null)
+			throw new Exception("Valore di input non ammesso.");
+
+		int result = 0;
+		
+		//String conta = "conta";
+		
+		try (PreparedStatement ps = connection.prepareStatement(
+				"select count(*) as conta from compagnia c where c.datafondazione > ?;")) {
+			//ps.setString(1, conta);
+			ps.setDate(1, new java.sql.Date(dateCreatedInput.getTime()));
+			
+			try (ResultSet rs = ps.executeQuery();){
+			if (rs.next()) {
+				result = rs.getInt("conta");
+			}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return result;
 	}
 
 	@Override
 	public List<Impiegato> findAllErroriAssunzione() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		if (isNotActive())
+			throw new Exception("Connessione non attiva. Impossibile effettuare operazioni DAO.");
+
+		ArrayList<Impiegato> result = new ArrayList<Impiegato>();
+		Impiegato userTemp = null;
+		Compagnia compTemp = null;
+
+		try (Statement ps = connection.createStatement(); ResultSet rs = ps.executeQuery("select * from"
+				+ " impiegato i inner join compagnia c on c.id=i.compagnia_id where c.datafondazione > i.dataassunzione ;")) {
+
+			while (rs.next()) {
+				userTemp = new Impiegato();
+				userTemp.setNome(rs.getString("NOME"));
+				userTemp.setCognome(rs.getString("COGNOME"));
+				userTemp.setCodiceFiscale(rs.getString("codicefiscale"));
+				userTemp.setDataNascita(rs.getDate("datanascita"));
+				userTemp.setDataAssunzione(rs.getDate("dataassunzione"));
+				userTemp.setId(rs.getLong("i.ID"));
+				
+				compTemp = new Compagnia();
+				compTemp.setId(rs.getLong("c.id"));
+				compTemp.setRagioneSociale(rs.getString("ragionesociale"));
+				compTemp.setFatturatoAnnuo(rs.getInt("fatturatoannuo"));
+				compTemp.setDataFondazione(rs.getDate("datafondazione"));
+				userTemp.setCompagnia(compTemp);
+				result.add(userTemp);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return result;
 	}
 
 	

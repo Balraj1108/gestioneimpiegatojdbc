@@ -170,7 +170,6 @@ public class CompagniaDAOImpl extends AbstractMySQLDAO implements CompagniaDAO {
 				query += "datecreated > '" + new java.sql.Date(input.getDataFondazione().getTime()) + " ' and ";
 			}
 			query+= "1=1";
-			System.out.println(query);
 			
 			try (ResultSet rs = s.executeQuery(query);) {
 				while (rs.next()) {
